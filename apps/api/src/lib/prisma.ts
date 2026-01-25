@@ -1,8 +1,23 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
-// Esto asegura que no creamos múltiples instancias de conexión en desarrollo
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+// This secure we not create multiples instances
+const globalForPrisma = globalThis as unknown as {
+	prisma: PrismaClient | undefined;
+};
 
-export const prisma = globalForPrisma.prisma || new PrismaClient();
+const adapter = new PrismaPg({
+	connectionString: process.env.DATABASE_URL,
+});
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+export const prisma =
+	globalForPrisma.prisma ??
+	new PrismaClient({
+		adapter,
+		log:
+			process.env.NODE_ENV === "development"
+				? ["query", "error", "warn"]
+				: ["error"],
+	});
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
