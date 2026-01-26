@@ -1,5 +1,6 @@
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client, BUCKET_NAME } from "@/lib/s3.js";
+import sharp from "sharp";
 
 export const uploadToS3 = async (fileBuffer: Buffer, fileName: string, contentType: string) => {
     const fileKey = `uploads/${Date.now()}-${fileName}`;
@@ -16,3 +17,12 @@ export const uploadToS3 = async (fileBuffer: Buffer, fileName: string, contentTy
     // Usamos la misma fileKey para la URL
     return `https://${BUCKET_NAME}.s3.${process.env.S3_REGION}.amazonaws.com/${fileKey}`;
 };
+
+export const getImageMetadata = async (buffer: Buffer) => {
+    const metadata = await sharp(buffer).metadata();
+    return {
+        width: metadata.width || 0,
+        height: metadata.height || 0,
+        format: metadata.format || "unknown"
+    }
+}
