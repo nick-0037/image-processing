@@ -9,6 +9,7 @@ export const errorHandler = (
 	const status = err.status || err.statusCode || 500;
 	const message = err.message || "Internal Server Error";
 
+	console.log(err)
 	console.error(
 		`[${new Date().toISOString()}] ${req.method} ${req.url} - ${status}: ${message}`,
 	);

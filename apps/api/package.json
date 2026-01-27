@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "node --env-file=.env ./node_modules/prisma/build/index.js db push"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.975.0",
