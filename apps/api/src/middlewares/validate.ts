@@ -11,15 +11,17 @@ export const validate = (schema: z.ZodType<any, any, any>) => {
 				params: req.params,
 			});
 
-			req.body = parsed.body;
+			Object.defineProperty(req, 'body', { value: parsed.body ?? req.body });
+            Object.defineProperty(req, 'query', { value: parsed.query ?? req.query });
+            Object.defineProperty(req, 'params', { value: parsed.params ?? req.params });
 
 			next();
 		} catch (e: unknown) {
 			if (e instanceof ZodError) {
 				const err = createError(400, "Validation Error");
-				
+
 				(err as any).details = e.issues.map((iss) => ({
-					field: iss.code === "unrecognized_keys" ? "object" : iss.path.slice(1).join(),
+					field: iss.path.length > 0 ? iss.path.join(".") : "request",
 					message: iss.message,
 				}));
 

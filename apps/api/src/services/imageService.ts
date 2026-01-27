@@ -1,6 +1,11 @@
 import path from "path";
 import sharp from "sharp";
 import fs from "fs";
+import { prisma } from "@/lib/prisma.js";
+import { z } from "zod";
+import { transformImageSchema } from "@/schemas/image.schema.js";
+
+type TransformOptions = z.infer<typeof transformImageSchema>["body"];
 
 export const getImageMetadata = async (buffer: Buffer) => {
 	const metadata = await sharp(buffer).metadata();
@@ -13,7 +18,7 @@ export const getImageMetadata = async (buffer: Buffer) => {
 
 export const applyImageTransformations = async (
 	buffer: Buffer,
-	options: any,
+	options: TransformOptions,
 ) => {
 	let session = sharp(buffer);
 
@@ -21,20 +26,18 @@ export const applyImageTransformations = async (
 	if (options.crop) {
 		const { width, height, x, y } = options.crop;
 		session = session.extract({
-			left: Math.round(x || 0),
-			top: Math.round(y || 0),
-			width: Math.round(width),
-			height: Math.round(height),
+			left: x,
+			top: y,
+			width: width,
+			height: height,
 		});
 	}
 
 	// Resize
 	if (options.resize) {
-		session = session.resize(
-			options.resize.width || null,
-			options.resize.height || null,
-			{ fit: "cover" },
-		);
+		session = session.resize(options.resize.width, options.resize.height, {
+			fit: "cover",
+		});
 	}
 
 	// Rotate & Flip/Flap
@@ -52,10 +55,11 @@ export const applyImageTransformations = async (
 		]);
 
 	// Format & compression
-	if (options.format)
+	if (options.format) {
 		session = session.toFormat(options.format, {
-			quality: Number(options.compress.quality || 80),
+			quality: options.compress.quality,
 		});
+	}
 
 	if (options.watermark) {
 		const watermarkPath = path.join(
@@ -78,7 +82,7 @@ export const applyImageTransformations = async (
 				.grayscale()
 				.composite([
 					{
-						input: Buffer.from([128, 128, 128, 77]), 
+						input: Buffer.from([128, 128, 128, 77]),
 						raw: { width: 1, height: 1, channels: 4 },
 						tile: true,
 						blend: "dest-in",
@@ -101,4 +105,36 @@ export const applyImageTransformations = async (
 	const metadata = await sharp(transformedBuffer).metadata();
 
 	return { transformedBuffer, metadata };
+};
+
+export const findImageById = async (id: string) => {
+	return await prisma.image.findUnique({
+		where: { id },
+	});
+};
+
+export const findImagesPaginated = async (
+	page: number,
+	limit: number,
+	userId: string,
+) => {
+	const skip = (page - 1) * limit;
+
+	const [images, total] = await Promise.all([
+		prisma.image.findMany({
+			where: {
+				userId,
+			},
+			skip,
+			take: limit,
+			orderBy: { createdAt: "desc" },
+		}),
+		prisma.image.count({ where: { userId } }),
+	]);
+
+	return {
+		images,
+		total,
+		totalPages: Math.ceil(total / limit),
+	};
 };
