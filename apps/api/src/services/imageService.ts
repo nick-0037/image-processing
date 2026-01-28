@@ -4,13 +4,13 @@ import fs from "fs";
 import { prisma } from "@/lib/prisma.js";
 import { z } from "zod";
 import { transformImageSchema } from "@/schemas/image.schema.js";
-import crypto from "crypto";
-import { HeadObjectCommand } from "@aws-sdk/client-s3";
-import { s3Client } from "@/lib/s3.js";
-import { getFromS3, uploadToS3 } from "./s3Service.js";
 
 type TransformOptions = z.infer<typeof transformImageSchema>["body"];
 
+/**
+ * 1. METADATA LOGIC
+ * Useful for the initial upload to save original dimensions.
+ */
 export const getImageMetadata = async (buffer: Buffer) => {
 	const metadata = await sharp(buffer).metadata();
 	return {
@@ -20,6 +20,11 @@ export const getImageMetadata = async (buffer: Buffer) => {
 	};
 };
 
+/**
+ * 2. TRANSFORMATION ENGINE (The "Heavy Lifter")
+ * This will be called by Worker.
+ * It takes a Buffer and returns the transformed Buffer + metadata.
+ */
 export const applyImageTransformations = async (
 	buffer: Buffer,
 	options: TransformOptions,
@@ -111,6 +116,10 @@ export const applyImageTransformations = async (
 	return { transformedBuffer, metadata };
 };
 
+/**
+ * 3. DATABASE ACCESSORS
+ * Centralized queries used by both Controller and Worker.
+ */
 export const findImageById = async (id: string) => {
 	return await prisma.image.findUnique({
 		where: { id },
@@ -141,78 +150,4 @@ export const findImagesPaginated = async (
 		total,
 		totalPages: Math.ceil(total / limit),
 	};
-};
-
-export const getOrTransformImage = async (
-	imageRecord: any,
-	options: TransformOptions,
-	userId: string,
-) => {
-	// Generate unique hash based in the transformations
-	const transformHash = crypto
-		.createHash("md5")
-		.update(JSON.stringify(options))
-		.digest("hex")
-		.slice(0, 12);
-
-	const targetFormat = options.format;
-
-	console.log("options from getOrtransformImage", JSON.stringify(options));
-
-	// Construct the cache key: transformed/{originalId}_{optionsHash}.{format}
-	const cacheKey = `transformed/${imageRecord.id}_${transformHash}.${targetFormat}`;
-
-	// Cache check: try to find the object in S3
-	try {
-		await s3Client.send(
-			new HeadObjectCommand({
-				Bucket: process.env.S3_BUCKET_NAME,
-				Key: cacheKey,
-			}),
-		);
-
-		// If S3 doesn't throw, the file exists. Now verify DB record.
-		const existingImage = await prisma.image.findFirst({
-			where: {
-				key: cacheKey,
-				userId,
-			},
-		});
-
-		if (existingImage) {
-			return { image: existingImage, cached: true };
-		}
-	} catch (e) {
-		// Error means file doesn't exist in S3 (Cache Miss). Proceed to Sharp.
-	}
-
-	// Cache Miss: Download, Transform, and Upload
-	const originalBuffer = await getFromS3(imageRecord.key);
-
-	const { transformedBuffer, metadata } = await applyImageTransformations(
-		originalBuffer,
-		options,
-	);
-
-	// Upload the new result using our deterministic cacheKey
-	const { url, key } = await uploadToS3(
-		transformedBuffer,
-		cacheKey,
-		`image/${metadata.format}`,
-		"transformed",
-	);
-
-	// Create the new image record in Database
-    const newImage = await prisma.image.create({
-        data: {
-            url,
-            key,
-            format: metadata.format || "unknown",
-            width: metadata.width || 0,
-            height: metadata.height || 0,
-            userId,
-        },
-    });
-
-	return { image: newImage, cached: false };
 };

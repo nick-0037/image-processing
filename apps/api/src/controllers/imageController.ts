@@ -4,10 +4,11 @@ import {
 	findImageById,
 	getImageMetadata,
 	findImagesPaginated,
-	getOrTransformImage,
 } from "@/services/imageService.js";
 import { prisma } from "@/lib/prisma.js";
-import { uploadToS3, getFromS3 } from "@/services/s3Service.js";
+import { uploadToS3 } from "@/services/s3Service.js";
+import crypto from "crypto";
+import { addTaskToQueue } from "@/services/queueService.js";
 
 export const uploadImage = asyncHandler(async (req: Request, res: Response) => {
 	if (!req.file) throw new Error("Please upload an image");
@@ -39,7 +40,7 @@ export const uploadImage = asyncHandler(async (req: Request, res: Response) => {
 
 export const transformImage = asyncHandler(
 	async (req: Request, res: Response) => {
-		const id = req.params.id as any; 
+		const id = req.params.id as any;
 		const transformations = req.body;
 		const userId = req.user!.id;
 
@@ -49,16 +50,43 @@ export const transformImage = asyncHandler(
 
 		if (!imageRecord) throw new Error("Image not found");
 
-		// Let the service handle the Cache/Transform logic
-		const { image, cached } = await getOrTransformImage(
-			imageRecord,
-			transformations,
-			userId,
-		);
+		// Generate a deterministic hash for this specific transformation
+		const transformHash = crypto
+			.createHash("md5")
+			.update(JSON.stringify(transformations))
+			.digest("hex")
+			.slice(0, 12);
 
-		// Set a custom header so the frontend knows if it was a cache hit
-		res.setHeader("X-cache", cached ? "HIT" : "MISS");
-		res.status(cached ? 200 : 201).json(image);
+		const targetFormat = transformations.format || "webp";
+		const cacheKey = `transformed/${id}_${transformHash}.${targetFormat}`;
+
+		// Check if already transformed
+		const existing = await prisma.image.findFirst({
+			where: { key: cacheKey, userId },
+		});
+
+		if (existing) {
+			res.setHeader("X-Cache", "HIT");
+			return res.status(200).json(existing);
+		}
+
+		// If not, send to Queue
+		addTaskToQueue({
+			imageId: id,
+			originalKey: imageRecord.key,
+			transformations,
+			cacheKey,
+			userId,
+		});
+
+		// Tell the client "I'm working on it"
+		res.setHeader("X-cache", "MISS");
+		res.status(202).json({
+            message: "Transformation request accepted and queued",
+            status: "processing",
+            taskId: transformHash,
+            expectedKey: cacheKey
+        });
 	},
 );
 

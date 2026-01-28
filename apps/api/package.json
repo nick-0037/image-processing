@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node --import tsx --env-file=.env --watch src/index.ts",
+    "worker": "node --import tsx --env-file=.env --watch src/worker.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "db:generate": "prisma generate",
@@ -12,6 +13,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.975.0",
     "@prisma/client": "^7.2.0",
+    "amqplib": "^0.10.9",
     "bcrypt": "^6.0.0",
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "@prisma/adapter-pg": "^7.3.0",
+    "@types/amqplib": "^0.10.8",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.6",
     "@types/http-errors": "^2.0.5",
