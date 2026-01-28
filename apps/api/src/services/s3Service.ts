@@ -5,9 +5,12 @@ export const uploadToS3 = async (
 	fileBuffer: Buffer,
 	fileName: string,
 	contentType: string,
-    folder: "uploads" | "transformed" = "uploads"
+	folder: "uploads" | "transformed" = "uploads",
 ) => {
-	const fileKey = `${folder}/${Date.now()}-${fileName}`;
+	const fileKey =
+		fileName.startsWith("transformed/") || fileName.startsWith("uploads/")
+			? fileName
+			: `${folder}/${Date.now()}-${fileName}`;
 
 	const command = new PutObjectCommand({
 		Bucket: BUCKET_NAME,

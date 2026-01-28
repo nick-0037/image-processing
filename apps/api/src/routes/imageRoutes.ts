@@ -14,6 +14,7 @@ import {
 	uploadImageSchema,
 } from "@/schemas/image.schema.js";
 import { validate } from "@/middlewares/validate.js";
+import { transformationLimiter } from "@/middlewares/rateLimiter.js";
 
 const router = Router();
 
@@ -29,6 +30,7 @@ router.post(
 router.post(
 	"/:id/transform",
 	authenticate,
+    transformationLimiter,
 	validate(imageIdSchema),
 	validate(transformImageSchema),
 	transformImage,
