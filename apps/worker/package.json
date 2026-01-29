@@ -1,0 +1,25 @@
+{
+	"name": "@repo/worker",
+	"version": "1.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "node --import tsx --env-file=../../.env --watch src/worker.ts",
+		"build": "tsc",
+		"start": "node --import tsx --env-file=../../.env src/worker.ts"
+	},
+	"dependencies": {
+		"@repo/database": "workspace:*",
+		"@repo/shared": "workspace:*",
+		"@repo/storage": "workspace:*",
+		"@aws-sdk/client-s3": "^3.975.0",
+		"amqplib": "^0.10.9",
+		"sharp": "^0.34.5",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@types/amqplib": "^0.10.8",
+		"@types/node": "^25.0.9",
+		"tsx": "^4.21.0",
+		"typescript": "^5.9.3"
+	}
+}

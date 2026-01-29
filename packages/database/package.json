@@ -1,0 +1,22 @@
+{
+	"name": "@repo/database",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"main": "./src/client.ts",
+	"types": "./src/client.ts",
+	"scripts": {
+		"build": "tsc",
+		"db:generate": "prisma generate",
+		"db:push": "prisma db push"
+	},
+	"dependencies": {
+		"@prisma/adapter-pg": "^7.3.0",
+		"@prisma/client": "^7.2.0",
+		"pg": "^8.17.2"
+	},
+	"devDependencies": {
+		"@types/pg": "^8.16.0",
+		"prisma": "^7.2.0"
+	}
+}

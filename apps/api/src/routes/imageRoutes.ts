@@ -10,9 +10,9 @@ import { authenticate } from "@/middlewares/authMiddleware.js";
 import {
 	imageIdSchema,
 	imagePaginationSchema,
-	transformImageSchema,
 	uploadImageSchema,
-} from "@/schemas/image.schema.js";
+	transformImageSchema,
+} from "@repo/shared";
 import { validate } from "@/middlewares/validate.js";
 import { transformationLimiter } from "@/middlewares/rateLimiter.js";
 
@@ -30,8 +30,7 @@ router.post(
 router.post(
 	"/:id/transform",
 	authenticate,
-    transformationLimiter,
-	validate(imageIdSchema),
+	transformationLimiter,
 	validate(transformImageSchema),
 	transformImage,
 );

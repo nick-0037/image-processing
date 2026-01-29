@@ -21,11 +21,14 @@ export const imagePaginationSchema = z.object({
 			.string()
 			.optional()
 			.default("10")
-			.transform((val) => Math.min(100, Math.max(1, parseInt(val, 10)))),
+			.transform((val) => Math.min(10, Math.max(1, parseInt(val, 10)))),
 	}),
 });
 
 export const transformImageSchema = z.object({
+	params: z.object({
+		id: z.uuid("ID must be an UUID valid"),
+	}),
 	body: z.object({
 		resize: z
 			.object({

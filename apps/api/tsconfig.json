@@ -5,12 +5,19 @@
 		"rootDir": "./src",
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/*"]
+			"@/*": ["src/*"],
+			"@repo/shared": ["../../packages/shared/src/index.ts"],
+			"@repo/database": ["../../packages/database/src/client.ts"],
+			"@repo/storage": ["../../packages/storage/src/index.ts"]
 		},
 		"typeRoots": ["./node_modules/@types", "./src/types"]
-		
 	},
 
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist"]
+	"exclude": ["node_modules", "dist"],
+	"references": [
+		{ "path": "../../packages/shared" },
+		{ "path": "../../packages/database" },
+		{ "path": "../../packages/storage" }
+	]
 }

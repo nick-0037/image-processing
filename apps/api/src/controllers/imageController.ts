@@ -5,8 +5,8 @@ import {
 	getImageMetadata,
 	findImagesPaginated,
 } from "@/services/imageService.js";
-import { prisma } from "@/lib/prisma.js";
-import { uploadToS3 } from "@/services/s3Service.js";
+import { prisma } from "@repo/database";
+import { uploadToS3 } from "@repo/storage";
 import crypto from "crypto";
 import { addTaskToQueue } from "@/services/queueService.js";
 
@@ -82,11 +82,11 @@ export const transformImage = asyncHandler(
 		// Tell the client "I'm working on it"
 		res.setHeader("X-cache", "MISS");
 		res.status(202).json({
-            message: "Transformation request accepted and queued",
-            status: "processing",
-            taskId: transformHash,
-            expectedKey: cacheKey
-        });
+			message: "Transformation request accepted and queued",
+			status: "processing",
+			taskId: transformHash,
+			expectedKey: cacheKey,
+		});
 	},
 );
 

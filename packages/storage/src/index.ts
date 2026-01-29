@@ -1,5 +1,5 @@
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { s3Client, BUCKET_NAME } from "@/lib/s3.js";
+import { s3Client, BUCKET_NAME } from "./client.js";
 
 export const uploadToS3 = async (
 	fileBuffer: Buffer,

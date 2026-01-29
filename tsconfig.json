@@ -1,16 +1,20 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "types": ["node"]
-  },
-  "include": [],
-  "references": [
-    { "path": "./apps/api" }
-  ],
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "nodenext",
+		"moduleResolution": "nodenext",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"types": ["node"]
+	},
+	"include": [],
+	"references": [
+		{ "path": "./apps/api" },
+		{ "path": "./apps/worker" },
+		{ "path": "./packages/shared" },
+		{ "path": "./packages/database" },
+		{ "path": "./packages/storage" }
+	]
 }
